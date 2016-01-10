@@ -72,7 +72,7 @@ def ip_from(ip):
     else:
         frm, to ,addr = _LIST2[idx - 1]
         if frm <= i <= to:
-            if 'IANA' in addr:
+            if 'IANA' in addr.split(" ")[0]:
                 pass
             else:
                 return addr
