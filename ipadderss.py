@@ -1,12 +1,12 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import time,json,os,sys
 from bisect import bisect
 from IPy import IP
 ##省，在函数judgment_area()使用，主要用来判断是不是中国地区，和拼接出省
-REGION=['山东省','山西省','河北省','河南省','湖北省','湖南省','广东省','黑龙江省',
-'辽宁省','浙江省','安徽省','江苏省','福建省','甘肃省','江西省','云南省','贵州省','四川省','青海省','陕西省'
-,'吉林省','海南省']
+REGION=['山东','山西','河北','河南','湖北','湖南','广东','黑龙江',
+'辽宁','浙江','安徽','江苏','福建','甘肃','江西','云南','贵州','四川','青海','陕西'
+,'吉林','海南']
 
 ##直辖市，同时，拼接出直辖市
 ZXS=['北京','天津','重庆','上海']
@@ -18,7 +18,9 @@ ZZQ=['内蒙古','西藏','新疆','宁夏','广西','台湾','澳门','香港']
 #例如GW=['ac']，那么就能能在函数judgment_area()判断出带有ac的地区
 #GW=['a州'] ，result['isp']="123a州xxx"，那么出来的地点就是123a州，仅对国外城市有效
 #
-GW=['州','市','首尔','釜山','市','仁川','北海道','东京','大手','纽约','墨尔本',"华盛顿"]
+GW=['州','市','首尔','釜山','市','仁川','北海道','东京','大手','纽约','墨尔本',"华盛顿",
+'巴厘岛','万隆','雅加达','苏腊巴亚','汉诺威','法兰克福','罗斯托克','柏林','波恩','特里尔','科隆','杜伊斯堡'
+,'伦敦','利物浦','布莱顿','英格兰','曼彻斯特']
 
 
 ##网络运营商
@@ -40,7 +42,8 @@ ISP={
     '美国国防部':['国防部网'],
     '谷歌公司':['谷歌公司'],
     'Apple':['Apple公司'],
-    'Inc':['Inc']
+    'Inc':['Inc'],
+    '雅虎':['雅虎']
 }
 
 _LIST1, _LIST2 = [], []
@@ -69,7 +72,10 @@ def ip_from(ip):
     else:
         frm, to ,addr = _LIST2[idx - 1]
         if frm <= i <= to:
-            return addr
+            if 'IANA' in addr:
+                pass
+            else:
+                return addr
         else:
             return u'unknown ip address %s' % ip
 
@@ -89,18 +95,19 @@ def put_ip2file(data):
             if isp == "":
                 isp ="null"
             f.write("%s %s %s %s " %(ip,country,region,isp)+'\n')
-            print "%s %s %s %s " %(ip,country,region,isp)
+            print "%s %s %s %s ".encode("GBK") %(ip,country,region,isp)
     else:
         os.mkdir("ip-info")
 
 
 ##国外，港澳台统一isp为null
+isp_info="null"
 def judgment_area(data):
     area_data = data['place']
     result={}
     result['country'] = "系统国家"
     result['region'] = "系统地方"
-    result['isp']="null"
+    result['isp']=isp_info
     result['title']=data['title']
     result['ip']=data['ip']
 
@@ -116,7 +123,7 @@ def judgment_area(data):
     for j in REGION:
         if j in area_data and f==0:
             result['country'] = "中国"
-            result['region'] = data['place'].split("省")[0]+"省"
+            result['region'] = j+"省"
             f=1
     ##判断直辖市
     for x in ZXS:
@@ -140,13 +147,17 @@ def judgment_area(data):
                 result['region'] = data['isp'].split(i)[0]+i
                 break
             else:
-                result['region'] = "未知地方(省or州)"
+                result['region'] = "null"
 
     ##ISP
     for i in ISP:
         for j in ISP[i]:
             if j in data['isp']:
-                result['isp'] = i
+                global isp_info
+                isp_info = i
+                result['isp'] = isp_info
+    else:
+        result['isp'] = isp_info
     # print result
     put_ip2file(result)
     #print result['country'],result['region'],result['isp'],data['ip'],result['title']
